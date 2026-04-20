@@ -1,0 +1,72 @@
+# ============================================================
+# Plugin Moodle Matrix Jokko — .gitignore
+# ============================================================
+
+# --- Dépendances PHP (Composer) ---
+vendor/
+composer.lock
+
+# --- Configuration sensible & secrets ---
+config.php
+config.local.php
+*.env
+.env
+.env.*
+config_matrix.php
+
+# --- Credentials / tokens Matrix / Synapse ---
+*.pem
+*.key
+*.crt
+*.p12
+homeserver.yaml
+registration.yaml
+*.secret
+secrets/
+
+# --- Logs ---
+*.log
+logs/
+/tmp/
+
+# --- Cache & données temporaires ---
+cache/
+*.cache
+*.tmp
+*.swp
+*.swo
+
+# --- Fichiers de build & IDE ---
+.idea/
+.vscode/
+*.DS_Store
+Thumbs.db
+nbproject/
+.project
+.settings/
+
+# --- Tests & couverture ---
+.phpunit.result.cache
+coverage/
+.coverage
+tests/fixtures/generated/
+
+# --- Node / frontend (si Element Web embarqué) ---
+node_modules/
+dist/
+build/
+.npm/
+package-lock.json
+yarn.lock
+
+# --- Backup Moodle générés automatiquement ---
+backup/*/automated/
+*.mbz
+
+# --- Fichiers uploadés / données utilisateur ---
+files/
+filestore/
+
+# --- OS ---
+.DS_Store
+desktop.ini
