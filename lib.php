@@ -58,10 +58,30 @@ function matrix_supports($feature): ?bool
 }
 
 /**
+ * Transforme une erreur technique du client HTTP Matrix en une erreur
+ * Moodle lisible par l'utilisateur, avec log détaillé pour l'admin.
+ *
+ * @throws \moodle_exception
+ */
+function matrix_throw_homeserver_unreachable(\Throwable $e): void
+{
+    debugging('Jokko homeserver error: ' . $e->getMessage(), DEBUG_DEVELOPER);
+
+    throw new \moodle_exception(
+        Plugin\Infrastructure\Internationalization::ERROR_HOMESERVER_UNREACHABLE,
+        Plugin\Application\Plugin::NAME,
+        '',
+        null,
+        $e->getMessage(),
+    );
+}
+
+/**
  * @see https://docs.moodle.org/dev/Activity_modules#lib.php
  * @see https://github.com/moodle/moodle/blob/v3.9.5/course/modlib.php#L126-L131
  *
  * @throws \RuntimeException
+ * @throws \moodle_exception
  */
 function matrix_add_instance(
     object $moduleinfo,
@@ -147,26 +167,30 @@ function matrix_add_instance(
                 'group_id' => $group->id()->toInt(),
             ]);
 
-            if (!$room instanceof Plugin\Domain\Room) {
-                $room = $roomService->createRoomForCourseAndGroup(
-                    $course,
-                    $group,
-                    $module,
+            try {
+                if (!$room instanceof Plugin\Domain\Room) {
+                    $room = $roomService->createRoomForCourseAndGroup(
+                        $course,
+                        $group,
+                        $module,
+                    );
+                }
+
+                $users = $moodleUserRepository->findAllUsersEnrolledInCourseAndGroupWithMatrixUserId(
+                    $course->id(),
+                    $group->id(),
                 );
+
+                $matrixRoomService->synchronizeRoomMembers(
+                    $room->matrixRoomId(),
+                    Matrix\Domain\UserIdCollection::fromUserIds(...\array_map(static function (Plugin\Domain\User $user): Matrix\Domain\UserId {
+                        return $user->matrixUserId();
+                    }, $users)),
+                    $userIdsOfStaff,
+                );
+            } catch (\RuntimeException $e) {
+                matrix_throw_homeserver_unreachable($e);
             }
-
-            $users = $moodleUserRepository->findAllUsersEnrolledInCourseAndGroupWithMatrixUserId(
-                $course->id(),
-                $group->id(),
-            );
-
-            $matrixRoomService->synchronizeRoomMembers(
-                $room->matrixRoomId(),
-                Matrix\Domain\UserIdCollection::fromUserIds(...\array_map(static function (Plugin\Domain\User $user): Matrix\Domain\UserId {
-                    return $user->matrixUserId();
-                }, $users)),
-                $userIdsOfStaff,
-            );
         }
 
         return $module->id()->toInt();
@@ -177,25 +201,29 @@ function matrix_add_instance(
         'group_id' => null,
     ]);
 
-    if (!$room instanceof Plugin\Domain\Room) {
-        $room = $roomService->createRoomForCourse(
-            $course,
-            $module,
+    try {
+        if (!$room instanceof Plugin\Domain\Room) {
+            $room = $roomService->createRoomForCourse(
+                $course,
+                $module,
+            );
+        }
+
+        $users = $moodleUserRepository->findAllUsersEnrolledInCourseAndGroupWithMatrixUserId(
+            $course->id(),
+            Moodle\Domain\GroupId::fromInt(0),
         );
+
+        $matrixRoomService->synchronizeRoomMembers(
+            $room->matrixRoomId(),
+            Matrix\Domain\UserIdCollection::fromUserIds(...\array_map(static function (Plugin\Domain\User $user): Matrix\Domain\UserId {
+                return $user->matrixUserId();
+            }, $users)),
+            $userIdsOfStaff,
+        );
+    } catch (\RuntimeException $e) {
+        matrix_throw_homeserver_unreachable($e);
     }
-
-    $users = $moodleUserRepository->findAllUsersEnrolledInCourseAndGroupWithMatrixUserId(
-        $course->id(),
-        Moodle\Domain\GroupId::fromInt(0),
-    );
-
-    $matrixRoomService->synchronizeRoomMembers(
-        $room->matrixRoomId(),
-        Matrix\Domain\UserIdCollection::fromUserIds(...\array_map(static function (Plugin\Domain\User $user): Matrix\Domain\UserId {
-            return $user->matrixUserId();
-        }, $users)),
-        $userIdsOfStaff,
-    );
 
     return $module->id()->toInt();
 }
@@ -229,10 +257,14 @@ function matrix_delete_instance($id): bool
 
     $matrixRoomService = $container->matrixRoomService();
 
-    foreach ($rooms as $room) {
-        $matrixRoomService->removeRoom($room->matrixRoomId());
+    try {
+        foreach ($rooms as $room) {
+            $matrixRoomService->removeRoom($room->matrixRoomId());
 
-        $roomRepository->remove($room);
+            $roomRepository->remove($room);
+        }
+    } catch (\RuntimeException $e) {
+        matrix_throw_homeserver_unreachable($e);
     }
 
     $moodleModuleRepository->remove($module);
@@ -334,31 +366,35 @@ function matrix_update_instance(
         $module->name(),
     );
 
-    foreach ($rooms as $room) {
-        $groupId = $room->groupId();
+    try {
+        foreach ($rooms as $room) {
+            $groupId = $room->groupId();
 
-        if ($groupId instanceof Moodle\Domain\GroupId) {
-            $group = $moodleGroupRepository->find($groupId);
+            if ($groupId instanceof Moodle\Domain\GroupId) {
+                $group = $moodleGroupRepository->find($groupId);
 
-            if (!$group instanceof Moodle\Domain\Group) {
-                throw new \RuntimeException(\sprintf(
-                    'Could not find group with id %d.',
-                    $groupId->toInt(),
-                ));
+                if (!$group instanceof Moodle\Domain\Group) {
+                    throw new \RuntimeException(\sprintf(
+                        'Could not find group with id %d.',
+                        $groupId->toInt(),
+                    ));
+                }
+
+                $name = $nameService->forGroupCourseAndModule(
+                    $group->name(),
+                    $course->shortName(),
+                    $module->name(),
+                );
             }
 
-            $name = $nameService->forGroupCourseAndModule(
-                $group->name(),
-                $course->shortName(),
-                $module->name(),
+            $matrixRoomService->updateRoom(
+                $room->matrixRoomId(),
+                $name,
+                Matrix\Domain\RoomTopic::fromString($module->topic()->toString()),
             );
         }
-
-        $matrixRoomService->updateRoom(
-            $room->matrixRoomId(),
-            $name,
-            Matrix\Domain\RoomTopic::fromString($module->topic()->toString()),
-        );
+    } catch (\RuntimeException $e) {
+        matrix_throw_homeserver_unreachable($e);
     }
 
     return true;

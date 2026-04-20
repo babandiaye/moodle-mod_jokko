@@ -57,6 +57,9 @@ $string = \array_merge($string, [
     Plugin\Infrastructure\Internationalization::SETTINGS_HOMESERVER_HEADING => 'Homeserver settings',
     Plugin\Infrastructure\Internationalization::SETTINGS_HOMESERVER_URL_DESCRIPTION => 'The URL where the Jokko bot should connect to your homeserver',
     Plugin\Infrastructure\Internationalization::SETTINGS_HOMESERVER_URL_NAME => 'Homeserver URL',
+    // Error handling (lib.php)
+    Plugin\Infrastructure\Internationalization::ERROR_HOMESERVER_UNREACHABLE => 'Unable to reach the Jokko homeserver',
+    Plugin\Infrastructure\Internationalization::ERROR_HOMESERVER_UNREACHABLE_HELP => 'The activity could not be created or updated because the Jokko homeserver is not reachable. Please contact your administrator to verify the homeserver URL, the access token and the network connectivity.',
     // view.php (actions)
     Plugin\Infrastructure\Internationalization::ACTION_EDIT_MATRIX_USER_ID_HEADER => 'Jokko user identifier missing',
     Plugin\Infrastructure\Internationalization::ACTION_EDIT_MATRIX_USER_ID_INFO_SUGGESTION => 'Perhaps one of the following is your Jokko user identifier? Just a guess!',
