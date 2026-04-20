@@ -3,7 +3,8 @@
 # ============================================================
 
 # --- Dépendances PHP (Composer) ---
-vendor/
+# NOTE: vendor/ doit être tracké dans ce paquet de déploiement Moodle
+# car le serveur cible n'exécute pas `composer install`.
 composer.lock
 
 # --- Configuration sensible & secrets ---

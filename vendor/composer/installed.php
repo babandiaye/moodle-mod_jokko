@@ -1,0 +1,41 @@
+<?php return array(
+    'root' => array(
+        'name' => 'element-io/matrix-moodle-plugin',
+        'pretty_version' => 'dev-main',
+        'version' => 'dev-main',
+        'reference' => '0f8ebfa7562b738c4f9ab8fc40e7f93a3ab5cae1',
+        'type' => 'library',
+        'install_path' => __DIR__ . '/../../',
+        'aliases' => array(),
+        'dev' => false,
+    ),
+    'versions' => array(
+        'element-io/matrix-moodle-plugin' => array(
+            'pretty_version' => 'dev-main',
+            'version' => 'dev-main',
+            'reference' => '0f8ebfa7562b738c4f9ab8fc40e7f93a3ab5cae1',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../../',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'ergebnis/clock' => array(
+            'pretty_version' => '2.4.0',
+            'version' => '2.4.0.0',
+            'reference' => '2dea65250cf6c621f9677fab224b4fd5227159d6',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../ergebnis/clock',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+        'php-curl-class/php-curl-class' => array(
+            'pretty_version' => '9.8.0',
+            'version' => '9.8.0.0',
+            'reference' => 'bf54ee6d9a6551dcdaff722ba83551ad8ef68698',
+            'type' => 'library',
+            'install_path' => __DIR__ . '/../php-curl-class/php-curl-class',
+            'aliases' => array(),
+            'dev_requirement' => false,
+        ),
+    ),
+);
