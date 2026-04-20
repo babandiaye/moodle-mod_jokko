@@ -35,19 +35,21 @@ final class EditMatrixUserIdAction
     {
         $matrixUserIdSuggestions = $this->matrixUserIdSuggestions($user);
 
-        // Forcer préremplissage si une seule suggestion est disponible
-        $default = $matrixUserIdSuggestions[0] ?? null;
-        if ($default instanceof Matrix\Domain\UserId) {
-            $_POST[Plugin\Infrastructure\MoodleFunctionBasedMatrixUserIdLoader::USER_PROFILE_FIELD_NAME]
-                = $default->toString();
-        }
-
         $matrixUserIdForm = new Plugin\Infrastructure\Form\EditMatrixUserIdForm(
             $this->page->url->out(true),
             [
                 'matrixUserIdSuggestions' => $matrixUserIdSuggestions,
             ],
         );
+
+        // Pré-remplir le champ avec la première suggestion via l'API Moodle
+        // (plutôt qu'une manipulation directe de $_POST).
+        $default = $matrixUserIdSuggestions[0] ?? null;
+        if ($default instanceof Matrix\Domain\UserId) {
+            $matrixUserIdForm->set_data([
+                Plugin\Infrastructure\MoodleFunctionBasedMatrixUserIdLoader::USER_PROFILE_FIELD_NAME => $default->toString(),
+            ]);
+        }
 
         if (!$matrixUserIdForm->is_submitted()) {
             echo $this->renderer->heading(get_string(

@@ -64,6 +64,26 @@ final class MoodleFunctionBasedMatrixUserIdLoader implements Plugin\Domain\Matri
         }
     }
 
+    /**
+     * Génère un identifiant Jokko à partir de l'email de l'utilisateur
+     * et du homeserver configuré, sans consulter le champ profil existant.
+     * Utilisé par la tâche planifiée pour pré-remplir les champs vides.
+     */
+    public function generateForUser(object $user): ?Matrix\Domain\UserId
+    {
+        $generated = $this->autoGenerateFromEmail($user);
+
+        if (null === $generated) {
+            return null;
+        }
+
+        try {
+            return Matrix\Domain\UserId::fromString($generated);
+        } catch (\InvalidArgumentException $exception) {
+            return null;
+        }
+    }
+
     private function autoGenerateFromEmail(object $user): ?string
     {
         if (!isset($user->auth) || !\in_array($user->auth, self::SUPPORTED_AUTH_METHODS, true)) {

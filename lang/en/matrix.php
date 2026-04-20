@@ -60,6 +60,8 @@ $string = \array_merge($string, [
     // Error handling (lib.php)
     Plugin\Infrastructure\Internationalization::ERROR_HOMESERVER_UNREACHABLE => 'Unable to reach the Jokko homeserver',
     Plugin\Infrastructure\Internationalization::ERROR_HOMESERVER_UNREACHABLE_HELP => 'The activity could not be created or updated because the Jokko homeserver is not reachable. Please contact your administrator to verify the homeserver URL, the access token and the network connectivity.',
+    // Scheduled task (db/tasks.php)
+    Plugin\Infrastructure\Internationalization::TASK_POPULATE_MATRIX_USER_ID_NAME => 'Populate Jokko user identifiers from email',
     // view.php (actions)
     Plugin\Infrastructure\Internationalization::ACTION_EDIT_MATRIX_USER_ID_HEADER => 'Jokko user identifier missing',
     Plugin\Infrastructure\Internationalization::ACTION_EDIT_MATRIX_USER_ID_INFO_SUGGESTION => 'Perhaps one of the following is your Jokko user identifier? Just a guess!',

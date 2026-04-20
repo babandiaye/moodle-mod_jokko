@@ -19,6 +19,11 @@ final class Internationalization
     public const ERROR_HOMESERVER_UNREACHABLE_HELP = 'error_homeserver_unreachable_help';
 
     /**
+     * @see \mod_matrix\task\populate_matrix_user_id_task
+     */
+    public const TASK_POPULATE_MATRIX_USER_ID_NAME = 'task_populate_matrix_user_id_name';
+
+    /**
      * @see \mod_matrix\Plugin\Infrastructure\Action\EditMatrixUserIdAction
      */
     public const ACTION_EDIT_MATRIX_USER_ID_HEADER = 'action_edit_matrix_user_id_header';

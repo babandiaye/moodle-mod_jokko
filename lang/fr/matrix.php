@@ -56,6 +56,8 @@ $string = \array_merge($string, [
     // Gestion des erreurs (lib.php)
     Plugin\Infrastructure\Internationalization::ERROR_HOMESERVER_UNREACHABLE => 'Impossible de joindre le homeserver Jokko',
     Plugin\Infrastructure\Internationalization::ERROR_HOMESERVER_UNREACHABLE_HELP => 'L’activité n’a pas pu être créée ou mise à jour car le homeserver Jokko n’est pas joignable. Contactez votre administrateur pour vérifier l’URL du homeserver, le jeton d’accès et la connectivité réseau.',
+    // Tâche planifiée (db/tasks.php)
+    Plugin\Infrastructure\Internationalization::TASK_POPULATE_MATRIX_USER_ID_NAME => 'Remplir les identifiants utilisateur Jokko depuis l’email',
     // view.php (actions)
     Plugin\Infrastructure\Internationalization::ACTION_EDIT_MATRIX_USER_ID_HEADER => 'Identifiant utilisateur Jokko manquant',
     Plugin\Infrastructure\Internationalization::ACTION_EDIT_MATRIX_USER_ID_INFO_SUGGESTION => 'Peut-être que l’un des identifiants suivants est le vôtre ? (Ceci est une suggestion automatique)',
