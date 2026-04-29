@@ -22,7 +22,7 @@ final class NameService
         Plugin\Domain\ModuleName $moduleName
     ): Matrix\Domain\RoomName {
         return Matrix\Domain\RoomName::fromString(\sprintf(
-            '%s (%s, %s)',
+            '%s - %s - %s',
             $courseShortName->toString(),
             $moduleName->toString(),
             $groupName->toString(),
@@ -34,7 +34,7 @@ final class NameService
         Plugin\Domain\ModuleName $moduleName
     ): Matrix\Domain\RoomName {
         return Matrix\Domain\RoomName::fromString(\sprintf(
-            '%s (%s)',
+            '%s - %s',
             $courseShortName->toString(),
             $moduleName->toString(),
         ));

@@ -35,6 +35,15 @@ final class RoomService
         return $this->api->createRoom([
             'creation_content' => $creationContent,
             'initial_state' => [
+                // https://spec.matrix.org/latest/client-server-api/#mroomencryption
+                // Chiffrement E2E activé via algorithme Megolm (recommandé Matrix).
+                [
+                    'content' => [
+                        'algorithm' => 'm.megolm.v1.aes-sha2',
+                    ],
+                    'state_key' => '',
+                    'type' => 'm.room.encryption',
+                ],
                 // https://spec.matrix.org/latest/client-server-api/#mroomguest_access
                 [
                     'content' => [
