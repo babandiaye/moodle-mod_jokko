@@ -111,24 +111,6 @@ final class ListRoomsAction
             );
         }, $rooms);
 
-        if (!$isStaff && \count($roomLinks) === 1) {
-            $roomLink = \reset($roomLinks);
-
-            echo $this->renderer->heading(get_string(
-                Plugin\Infrastructure\Internationalization::ACTION_LIST_ROOMS_HEADER,
-                Plugin\Application\Plugin::NAME,
-            ));
-
-            echo <<<HTML
-<script type="text/javascript">
-    window.location.href = '{$roomLink->url()->toString()}';
-</script>
-HTML;
-
-            echo $this->renderer->footer();
-            return;
-        }
-
         \usort($roomLinks, static function (Plugin\Domain\RoomLink $a, Plugin\Domain\RoomLink $b): int {
             return \strcmp(
                 $a->roomName()->toString(),
