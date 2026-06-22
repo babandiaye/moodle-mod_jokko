@@ -77,12 +77,7 @@ final class ListRoomsAction
         $matrixUserId = $this->matrixUserIdLoader->load($user);
         $courseShortName = Moodle\Domain\CourseShortName::fromString($cm->get_course()->shortname);
 
-        $entries = \array_map(function (Plugin\Domain\Room $room) use ($courseShortName, $module, $matrixUserId): array {
-            $url = $this->roomService->urlForRoom(
-                $room,
-                $matrixUserId,
-            );
-
+        $entries = \array_map(function (Plugin\Domain\Room $room) use ($courseShortName, $module): array {
             $groupId = $room->groupId();
 
             if (!$groupId instanceof Moodle\Domain\GroupId) {
@@ -91,6 +86,7 @@ final class ListRoomsAction
                     $module->name(),
                 );
                 $audience = 'Tous les participants';
+                $groupValue = 0;
             } else {
                 $group = $this->moodleGroupRepository->find($groupId);
 
@@ -104,11 +100,13 @@ final class ListRoomsAction
                     $module->name(),
                 );
                 $audience = $group->name()->toString();
+                $groupValue = $groupId->toInt();
             }
 
             return [
+                'roomId' => $room->id()->toInt(),
+                'groupValue' => $groupValue,
                 'name' => $name->toString(),
-                'url' => $url->toString(),
                 'audience' => $audience,
                 'timecreated' => $room->timecreated()->toInt(),
             ];
@@ -118,22 +116,77 @@ final class ListRoomsAction
             return \strcmp($a['name'], $b['name']);
         });
 
-        $cards = \implode(\PHP_EOL, \array_map(static function (array $entry): string {
-            $name = htmlspecialchars($entry['name'], ENT_QUOTES, 'UTF-8');
-            $url = htmlspecialchars($entry['url'], ENT_QUOTES, 'UTF-8');
-            $audience = htmlspecialchars($entry['audience'], ENT_QUOTES, 'UTF-8');
-            $created = $entry['timecreated'] > 0
-                ? htmlspecialchars(userdate($entry['timecreated'], '%d %B %Y, %H:%M'), ENT_QUOTES, 'UTF-8')
-                : '';
+        // Indexation par valeur de groupe (0 = « Tous les participants ») pour
+        // la sélection façon BigBlueButton.
+        $entriesByGroup = [];
 
-            $createdRow = '' === $created ? '' : <<<HTML
+        foreach ($entries as $entry) {
+            $entriesByGroup[$entry['groupValue']] = $entry;
+        }
+
+        // Groupe choisi via le paramètre URL « group » ; à défaut, le premier salon.
+        $selectedGroup = optional_param('group', null, PARAM_INT);
+
+        if (null === $selectedGroup || !\array_key_exists($selectedGroup, $entriesByGroup)) {
+            $selectedGroup = $entries[0]['groupValue'];
+        }
+
+        $selectedEntry = $entriesByGroup[$selectedGroup];
+
+        $cmId = (int) $cm->id;
+
+        // Menu déroulant des groupes — uniquement s'il y a plus d'un salon accessible.
+        $selectorHtml = '';
+
+        if (\count($entries) > 1) {
+            $groupLabel = htmlspecialchars(get_string(
+                Plugin\Infrastructure\Internationalization::ACTION_LIST_ROOMS_GROUP_LABEL,
+                Plugin\Application\Plugin::NAME,
+            ), ENT_QUOTES, 'UTF-8');
+
+            $options = \implode(\PHP_EOL, \array_map(static function (array $entry) use ($selectedGroup): string {
+                $value = (int) $entry['groupValue'];
+                $label = htmlspecialchars($entry['audience'], ENT_QUOTES, 'UTF-8');
+                $selected = $value === $selectedGroup ? ' selected' : '';
+
+                return "        <option value=\"{$value}\"{$selected}>{$label}</option>";
+            }, $entries));
+
+            $selectorHtml = <<<HTML
+<form method="get" action="view.php" class="jokko-group-form">
+    <input type="hidden" name="id" value="{$cmId}">
+    <label for="jokko-group-select" class="jokko-group-label">{$groupLabel}</label>
+    <select id="jokko-group-select" name="group" class="jokko-group-select" onchange="this.form.submit()">
+{$options}
+    </select>
+    <noscript><button type="submit" class="btn btn-secondary">OK</button></noscript>
+</form>
+HTML;
+        }
+
+        // Une seule carte : celle du groupe sélectionné. Le bouton pointe vers
+        // l'action « join » (invitation paresseuse côté serveur puis redirection),
+        // ouverte dans un nouvel onglet pour conserver la page Moodle.
+        $name = htmlspecialchars($selectedEntry['name'], ENT_QUOTES, 'UTF-8');
+        $audience = htmlspecialchars($selectedEntry['audience'], ENT_QUOTES, 'UTF-8');
+        $created = $selectedEntry['timecreated'] > 0
+            ? htmlspecialchars(userdate($selectedEntry['timecreated'], '%d %B %Y, %H:%M'), ENT_QUOTES, 'UTF-8')
+            : '';
+
+        $joinUrl = htmlspecialchars((new \moodle_url('/mod/matrix/view.php', [
+            'id' => $cmId,
+            'action' => 'join',
+            'room' => (int) $selectedEntry['roomId'],
+        ]))->out(false), ENT_QUOTES, 'UTF-8');
+
+        $createdRow = '' === $created ? '' : <<<HTML
             <li>
                 <svg class="jokko-meta-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
                 <span>Créé le {$created}</span>
             </li>
 HTML;
 
-            return <<<HTML
+        $cards = <<<HTML
 <div class="jokko-room-card">
     <div class="jokko-room-icon">
         <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path><line x1="8.5" y1="11.5" x2="8.5" y2="11.5"></line><line x1="12" y1="11.5" x2="12" y2="11.5"></line><line x1="15.5" y1="11.5" x2="15.5" y2="11.5"></line></svg>
@@ -157,14 +210,13 @@ HTML;
         </ul>
     </div>
     <div class="jokko-room-action">
-        <a href="{$url}" target="_blank" rel="noopener" class="jokko-room-btn" title="{$name}">
+        <a href="{$joinUrl}" target="_blank" rel="noopener" class="jokko-room-btn" title="{$name}">
             <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
             <span>Entrer dans le salon</span>
         </a>
     </div>
 </div>
 HTML;
-        }, $entries));
 
         echo $this->renderer->heading(get_string(
             Plugin\Infrastructure\Internationalization::ACTION_LIST_ROOMS_HEADER,
@@ -280,7 +332,28 @@ HTML;
         justify-content: center;
     }
 }
+.jokko-group-form {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    margin: 1rem 0 0.5rem;
+}
+.jokko-group-label {
+    font-weight: 600;
+    color: #374151;
+    margin: 0;
+}
+.jokko-group-select {
+    padding: 0.45rem 2rem 0.45rem 0.75rem;
+    border: 1px solid #d1d5db;
+    border-radius: 8px;
+    background: #fff;
+    color: #111827;
+    font-size: 0.95rem;
+    max-width: 100%;
+}
 </style>
+{$selectorHtml}
 <div class="jokko-rooms-list">
     {$cards}
 </div>

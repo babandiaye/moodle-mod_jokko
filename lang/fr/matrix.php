@@ -64,6 +64,8 @@ $string = \array_merge($string, [
     Plugin\Infrastructure\Internationalization::ACTION_EDIT_MATRIX_USER_ID_WARNING_NO_MATRIX_USER_ID => 'Il semble que vous n’ayez pas encore fourni d’identifiant utilisateur Jokko valide. Sans celui-ci, vous ne pouvez rejoindre aucun salon de discussion Jokko. Pouvez-vous en fournir un maintenant ?',
     Plugin\Infrastructure\Internationalization::ACTION_LIST_ROOMS_HEADER => 'Salons',
     Plugin\Infrastructure\Internationalization::ACTION_LIST_ROOMS_WARNING_NO_ROOMS => 'Aucun salon à afficher.',
+    Plugin\Infrastructure\Internationalization::ACTION_LIST_ROOMS_GROUP_LABEL => 'Groupe',
+    Plugin\Infrastructure\Internationalization::ACTION_JOIN_ROOM_ERROR_NOT_ALLOWED => 'Vous n’êtes pas autorisé à rejoindre ce salon, ou il n’existe plus.',
     // Formulaire d’édition
     Plugin\Infrastructure\Internationalization::FORM_EDIT_MATRIX_USER_ID_ERROR_MATRIX_USER_ID_INVALID => 'L’identifiant utilisateur Jokko que vous avez fourni semble invalide.',
     Plugin\Infrastructure\Internationalization::FORM_EDIT_MATRIX_USER_ID_ERROR_MATRIX_USER_ID_REQUIRED => 'Un identifiant utilisateur Jokko est requis, sinon vous ne pourrez pas rejoindre les salons de discussion Jokko.',

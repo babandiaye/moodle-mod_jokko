@@ -149,6 +149,98 @@ final class RoomService
         );
     }
 
+    /**
+     * Invitation paresseuse : invite UN seul utilisateur au moment où il
+     * demande à rejoindre le salon (clic sur « Entrer dans le salon »).
+     *
+     * Idempotent : on lit d'abord l'état d'adhésion ciblé de l'utilisateur
+     * (une seule requête, indépendante de la taille du salon) afin de ne pas
+     * ré-inviter un membre déjà présent ou déjà invité.
+     */
+    public function inviteUserToRoom(
+        Matrix\Domain\RoomId $roomId,
+        Matrix\Domain\UserId $userId,
+        bool $asStaff
+    ): void {
+        if (!$this->isUserInRoom($roomId, $userId)) {
+            $this->api->inviteUser(
+                $roomId,
+                $userId,
+            );
+        }
+
+        if ($asStaff) {
+            $this->grantStaffPowerLevel(
+                $roomId,
+                $userId,
+            );
+        }
+    }
+
+    private function isUserInRoom(
+        Matrix\Domain\RoomId $roomId,
+        Matrix\Domain\UserId $userId
+    ): bool {
+        try {
+            $membership = $this->api->getState(
+                $roomId,
+                Matrix\Domain\EventType::fromString('m.room.member'),
+                Matrix\Domain\StateKey::fromString($userId->toString()),
+            );
+        } catch (\RuntimeException $exception) {
+            // Aucun état d'adhésion pour cet utilisateur (404) => pas dans le salon.
+            return false;
+        }
+
+        if (!\is_array($membership) || !\array_key_exists('membership', $membership)) {
+            return false;
+        }
+
+        return \in_array(
+            $membership['membership'],
+            [
+                Matrix\Domain\Membership::invite()->toString(),
+                Matrix\Domain\Membership::join()->toString(),
+            ],
+            true,
+        );
+    }
+
+    private function grantStaffPowerLevel(
+        Matrix\Domain\RoomId $roomId,
+        Matrix\Domain\UserId $userId
+    ): void {
+        $powerLevels = $this->api->getState(
+            $roomId,
+            Matrix\Domain\EventType::fromString('m.room.power_levels'),
+            Matrix\Domain\StateKey::fromString(''),
+        );
+
+        if (!\is_array($powerLevels)) {
+            return;
+        }
+
+        if (!\array_key_exists('users', $powerLevels) || !\is_array($powerLevels['users'])) {
+            $powerLevels['users'] = [];
+        }
+
+        $staffPowerLevel = Matrix\Domain\PowerLevel::staff()->toInt();
+
+        // Déjà au bon niveau : rien à écrire.
+        if (($powerLevels['users'][$userId->toString()] ?? null) === $staffPowerLevel) {
+            return;
+        }
+
+        $powerLevels['users'][$userId->toString()] = $staffPowerLevel;
+
+        $this->api->setState(
+            $roomId,
+            Matrix\Domain\EventType::fromString('m.room.power_levels'),
+            Matrix\Domain\StateKey::fromString(''),
+            $powerLevels,
+        );
+    }
+
     public function synchronizeRoomMembers(
         Matrix\Domain\RoomId $roomId,
         Matrix\Domain\UserIdCollection $userIdsOfUsers,

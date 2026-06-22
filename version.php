@@ -19,4 +19,4 @@ $plugin->dependencies = [];
 $plugin->maturity = MATURITY_BETA;
 $plugin->release = '1.3-beta';
 $plugin->requires = 2020061505; // Requires Moodle v3.9 (LTS)
-$plugin->version = 2026062200; // UNCHK Jokko: refonte de la page Salons (fiche détaillée façon BBB)
+$plugin->version = 2026062201; // UNCHK Jokko: sélecteur de groupes + invitation paresseuse au clic

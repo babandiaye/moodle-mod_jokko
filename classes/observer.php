@@ -24,6 +24,15 @@ use core\event;
 final class observer
 {
     /**
+     * Depuis l'invitation paresseuse (l'utilisateur est invité au clic sur
+     * « Entrer dans le salon »), on n'écoute plus les événements d'inscription,
+     * de rôle ni d'adhésion à un groupe : aucune synchronisation de membres en
+     * masse n'est nécessaire.
+     *
+     * On conserve uniquement les événements qui agissent sur l'EXISTENCE et les
+     * MÉTADONNÉES des salles : création/suppression d'un groupe (1 salle par
+     * groupe), renommage du cours / du module / du groupe.
+     *
      * @see https://github.com/moodle/moodle/blob/02a2e649e92d570c7fa735bf05f69b588036f761/lib/classes/event/manager.php#L222-L230
      */
     public static function observers(): array
@@ -45,53 +54,9 @@ final class observer
                 self::class,
                 'onGroupDeleted',
             ],
-            event\group_member_added::class => [
-                self::class,
-                'onGroupMemberAdded',
-            ],
-            event\group_member_removed::class => [
-                self::class,
-                'onGroupMemberRemoved',
-            ],
             event\group_updated::class => [
                 self::class,
                 'onGroupUpdated',
-            ],
-            event\role_assigned::class => [
-                self::class,
-                'onRoleAssigned',
-            ],
-            event\role_capabilities_updated::class => [
-                self::class,
-                'onRoleCapabilitiesUpdated',
-            ],
-            event\role_deleted::class => [
-                self::class,
-                'onRoleDeleted',
-            ],
-            event\role_unassigned::class => [
-                self::class,
-                'onRoleUnassigned',
-            ],
-            event\user_deleted::class => [
-                self::class,
-                'onUserDeleted',
-            ],
-            event\user_enrolment_created::class => [
-                self::class,
-                'onUserEnrolmentCreated',
-            ],
-            event\user_enrolment_deleted::class => [
-                self::class,
-                'onUserEnrolmentDeleted',
-            ],
-            event\user_enrolment_updated::class => [
-                self::class,
-                'onUserEnrolmentUpdated',
-            ],
-            event\user_updated::class => [
-                self::class,
-                'onUserUpdated',
             ],
         ];
 
@@ -198,32 +163,6 @@ final class observer
         self::removeRoomsForGroup($groupId);
     }
 
-    public static function onGroupMemberAdded(event\group_member_added $event): void
-    {
-        self::requireAutoloader();
-
-        $courseId = Moodle\Domain\CourseId::fromString((string) $event->courseid);
-        $groupId = Moodle\Domain\GroupId::fromString((string) $event->objectid);
-
-        self::synchronizeRoomMembersForAllRoomsOfAllModulesInCourseAndGroup(
-            $courseId,
-            $groupId,
-        );
-    }
-
-    public static function onGroupMemberRemoved(event\group_member_removed $event): void
-    {
-        self::requireAutoloader();
-
-        $courseId = Moodle\Domain\CourseId::fromString((string) $event->courseid);
-        $groupId = Moodle\Domain\GroupId::fromString((string) $event->objectid);
-
-        self::synchronizeRoomMembersForAllRoomsOfAllModulesInCourseAndGroup(
-            $courseId,
-            $groupId,
-        );
-    }
-
     public static function onGroupUpdated(event\group_updated $event): void
     {
         self::requireAutoloader();
@@ -233,76 +172,11 @@ final class observer
         self::updateRoomsForGroup($groupId);
     }
 
-    public static function onRoleAssigned(event\role_assigned $event): void
-    {
-        self::requireAutoloader();
-
-        self::synchronizeRoomMembersForAllRooms();
-    }
-
-    public static function onRoleCapabilitiesUpdated(event\role_capabilities_updated $event): void
-    {
-        self::requireAutoloader();
-
-        self::synchronizeRoomMembersForAllRooms();
-    }
-
-    public static function onRoleDeleted(event\role_deleted $event): void
-    {
-        self::requireAutoloader();
-
-        self::synchronizeRoomMembersForAllRooms();
-    }
-
-    public static function onRoleUnassigned(event\role_unassigned $event): void
-    {
-        self::requireAutoloader();
-
-        self::synchronizeRoomMembersForAllRooms();
-    }
-
-    public static function onUserDeleted(event\user_deleted $event): void
-    {
-        self::requireAutoloader();
-
-        self::synchronizeRoomMembersForAllRooms();
-    }
-
-    public static function onUserEnrolmentCreated(event\user_enrolment_created $event): void
-    {
-        self::requireAutoloader();
-
-        $courseId = Moodle\Domain\CourseId::fromString((string) $event->courseid);
-
-        self::synchronizeRoomMembersForAllRoomsOfAllModulesInCourse($courseId);
-    }
-
-    public static function onUserEnrolmentDeleted(event\user_enrolment_deleted $event): void
-    {
-        self::requireAutoloader();
-
-        $courseId = Moodle\Domain\CourseId::fromString((string) $event->courseid);
-
-        self::synchronizeRoomMembersForAllRoomsOfAllModulesInCourse($courseId);
-    }
-
-    public static function onUserEnrolmentUpdated(event\user_enrolment_updated $event): void
-    {
-        self::requireAutoloader();
-
-        $courseId = Moodle\Domain\CourseId::fromString((string) $event->courseid);
-
-        self::synchronizeRoomMembersForAllRoomsOfAllModulesInCourse($courseId);
-    }
-
-    public static function onUserUpdated(event\user_updated $event): void
-    {
-        self::requireAutoloader();
-
-        self::synchronizeRoomMembersForAllRooms();
-    }
-
     /**
+     * Crée la salle d'un groupe pour chaque module Jokko du cours, si elle
+     * n'existe pas encore. La salle est créée VIDE (seul le bot y est) : les
+     * membres seront invités au clic sur « Entrer dans le salon ».
+     *
      * @throws Moodle\Domain\CourseNotFound
      * @throws Moodle\Domain\GroupNotFound
      */
@@ -329,194 +203,23 @@ final class observer
         ]);
 
         $roomRepository = $container->roomRepository();
-        $userRepository = $container->userRepository();
         $roomService = $container->roomService();
 
-        $rooms = \array_reduce(
-            $modules,
-            static function (array $rooms, Plugin\Domain\Module $module) use ($roomRepository, $roomService, $course, $group): array {
-                $room = $roomRepository->findOneBy([
-                    'module_id' => $module->id()->toInt(),
-                    'group_id' => $group->id()->toInt(),
-                ]);
-
-                if (!$room instanceof Plugin\Domain\Room) {
-                    $room = $roomService->createRoomForCourseAndGroup(
-                        $course,
-                        $group,
-                        $module,
-                    );
-                }
-
-                $rooms[] = $room;
-
-                return $rooms;
-            },
-            [],
-        );
-
-        $users = $userRepository->findAllUsersEnrolledInCourseAndGroupWithMatrixUserId(
-            $course->id(),
-            $group->id(),
-        );
-
-        $userIdsOfUsers = Matrix\Domain\UserIdCollection::fromUserIds(...\array_map(static function (Plugin\Domain\User $user): Matrix\Domain\UserId {
-            return $user->matrixUserId();
-        }, $users));
-
-        $staff = $userRepository->findAllStaffInCourseWithMatrixUserId($course->id());
-
-        $userIdsOfStaff = Matrix\Domain\UserIdCollection::fromUserIds(...\array_map(static function (Plugin\Domain\User $user): Matrix\Domain\UserId {
-            return $user->matrixUserId();
-        }, $staff));
-
-        $matrixRoomService = $container->matrixRoomService();
-
-        foreach ($rooms as $room) {
-            $matrixRoomService->synchronizeRoomMembers(
-                $room->matrixRoomId(),
-                $userIdsOfUsers,
-                $userIdsOfStaff,
-            );
-        }
-    }
-
-    /**
-     * @throws Plugin\Domain\ModuleNotFound
-     */
-    private static function synchronizeRoomMembersForAllRooms(): void
-    {
-        $container = Container::instance();
-
-        $rooms = $container->roomRepository()->findAll();
-
-        $moduleRepository = $container->moduleRepository();
-        $userRepository = $container->userRepository();
-        $matrixRoomService = $container->matrixRoomService();
-
-        foreach ($rooms as $room) {
-            $module = $moduleRepository->findOneBy([
-                'id' => $room->moduleId()->toInt(),
-            ]);
-
-            if (!$module instanceof Plugin\Domain\Module) {
-                throw Plugin\Domain\ModuleNotFound::for($room->moduleId());
-            }
-
-            $groupId = $room->groupId();
-
-            if (!$groupId instanceof Moodle\Domain\GroupId) {
-                $groupId = Moodle\Domain\GroupId::fromInt(0);
-            } // Moodle wants zero instead of null
-
-            $users = $userRepository->findAllUsersEnrolledInCourseAndGroupWithMatrixUserId(
-                $module->courseId(),
-                $groupId,
-            );
-
-            $staff = $userRepository->findAllStaffInCourseWithMatrixUserId($module->courseId());
-
-            $matrixRoomService->synchronizeRoomMembers(
-                $room->matrixRoomId(),
-                Matrix\Domain\UserIdCollection::fromUserIds(...\array_map(static function (Plugin\Domain\User $user): Matrix\Domain\UserId {
-                    return $user->matrixUserId();
-                }, $users)),
-                Matrix\Domain\UserIdCollection::fromUserIds(...\array_map(static function (Plugin\Domain\User $user): Matrix\Domain\UserId {
-                    return $user->matrixUserId();
-                }, $staff)),
-            );
-        }
-    }
-
-    private static function synchronizeRoomMembersForAllRoomsOfAllModulesInCourse(Moodle\Domain\CourseId $courseId): void
-    {
-        $container = Container::instance();
-
-        $modules = $container->moduleRepository()->findAllBy([
-            'course' => $courseId->toInt(),
-        ]);
-
-        $userRepository = $container->userRepository();
-        $roomRepository = $container->roomRepository();
-        $matrixRoomService = $container->matrixRoomService();
-
-        $staff = $userRepository->findAllStaffInCourseWithMatrixUserId($courseId);
-
-        $userIdsOfStaff = Matrix\Domain\UserIdCollection::fromUserIds(...\array_map(static function (Plugin\Domain\User $user): Matrix\Domain\UserId {
-            return $user->matrixUserId();
-        }, $staff));
-
         foreach ($modules as $module) {
-            $rooms = $roomRepository->findAllBy([
+            $room = $roomRepository->findOneBy([
                 'module_id' => $module->id()->toInt(),
+                'group_id' => $group->id()->toInt(),
             ]);
 
-            foreach ($rooms as $room) {
-                $groupId = $room->groupId();
-
-                if (!$groupId instanceof Moodle\Domain\GroupId) {
-                    $groupId = Moodle\Domain\GroupId::fromInt(0);
-                } // Moodle wants zero instead of null
-
-                $users = $userRepository->findAllUsersEnrolledInCourseAndGroupWithMatrixUserId(
-                    $courseId,
-                    $groupId,
-                );
-
-                $matrixRoomService->synchronizeRoomMembers(
-                    $room->matrixRoomId(),
-                    Matrix\Domain\UserIdCollection::fromUserIds(...\array_map(static function (Plugin\Domain\User $user): Matrix\Domain\UserId {
-                        return $user->matrixUserId();
-                    }, $users)),
-                    $userIdsOfStaff,
-                );
+            if ($room instanceof Plugin\Domain\Room) {
+                continue;
             }
-        }
-    }
 
-    private static function synchronizeRoomMembersForAllRoomsOfAllModulesInCourseAndGroup(
-        Moodle\Domain\CourseId $courseId,
-        Moodle\Domain\GroupId $groupId
-    ): void {
-        $container = Container::instance();
-
-        $modules = $container->moduleRepository()->findAllBy([
-            'course' => $courseId->toInt(),
-        ]);
-
-        $userRepository = $container->userRepository();
-
-        $users = $userRepository->findAllUsersEnrolledInCourseAndGroupWithMatrixUserId(
-            $courseId,
-            $groupId,
-        );
-
-        $userIdsOfUsers = Matrix\Domain\UserIdCollection::fromUserIds(...\array_map(static function (Plugin\Domain\User $user): Matrix\Domain\UserId {
-            return $user->matrixUserId();
-        }, $users));
-
-        $staff = $userRepository->findAllStaffInCourseWithMatrixUserId($courseId);
-
-        $userIdsOfStaff = Matrix\Domain\UserIdCollection::fromUserIds(...\array_map(static function (Plugin\Domain\User $user): Matrix\Domain\UserId {
-            return $user->matrixUserId();
-        }, $staff));
-
-        $roomRepository = $container->roomRepository();
-        $matrixRoomService = $container->matrixRoomService();
-
-        foreach ($modules as $module) {
-            $rooms = $roomRepository->findAllBy([
-                'group_id' => $groupId->toInt(),
-                'module_id' => $module->id()->toInt(),
-            ]);
-
-            foreach ($rooms as $room) {
-                $matrixRoomService->synchronizeRoomMembers(
-                    $room->matrixRoomId(),
-                    $userIdsOfUsers,
-                    $userIdsOfStaff,
-                );
-            }
+            $roomService->createRoomForCourseAndGroup(
+                $course,
+                $group,
+                $module,
+            );
         }
     }
 

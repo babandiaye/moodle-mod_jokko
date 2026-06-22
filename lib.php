@@ -124,21 +124,13 @@ function matrix_add_instance(
         Moodle\Domain\SectionId::fromInt($moduleinfo->section),
     );
 
-    $matrixRoomService = $container->matrixRoomService();
-
-    $moodleUserRepository = $container->userRepository();
-
-    $staff = $moodleUserRepository->findAllStaffInCourseWithMatrixUserId($course->id());
-
-    $userIdsOfStaff = Matrix\Domain\UserIdCollection::fromUserIds(...\array_map(static function (Plugin\Domain\User $user): Matrix\Domain\UserId {
-        return $user->matrixUserId();
-    }, $staff));
-
     $roomRepository = $container->roomRepository();
     $roomService = $container->roomService();
 
-    // Now try to iterate over all the courses and groups and see if any of
-    // the rooms need to be created
+    // Création anticipée des salles (vides : seul le bot y est présent).
+    // Les membres ne sont PLUS invités en masse ici : l'invitation se fait
+    // au clic sur « Entrer dans le salon » (invitation paresseuse), ce qui
+    // évite d'inviter des milliers d'utilisateurs d'un seul coup.
     $groups = groups_get_all_groups(
         $courseId->toInt(),
         0,
@@ -167,26 +159,15 @@ function matrix_add_instance(
                 'group_id' => $group->id()->toInt(),
             ]);
 
+            if ($room instanceof Plugin\Domain\Room) {
+                continue;
+            }
+
             try {
-                if (!$room instanceof Plugin\Domain\Room) {
-                    $room = $roomService->createRoomForCourseAndGroup(
-                        $course,
-                        $group,
-                        $module,
-                    );
-                }
-
-                $users = $moodleUserRepository->findAllUsersEnrolledInCourseAndGroupWithMatrixUserId(
-                    $course->id(),
-                    $group->id(),
-                );
-
-                $matrixRoomService->synchronizeRoomMembers(
-                    $room->matrixRoomId(),
-                    Matrix\Domain\UserIdCollection::fromUserIds(...\array_map(static function (Plugin\Domain\User $user): Matrix\Domain\UserId {
-                        return $user->matrixUserId();
-                    }, $users)),
-                    $userIdsOfStaff,
+                $roomService->createRoomForCourseAndGroup(
+                    $course,
+                    $group,
+                    $module,
                 );
             } catch (\RuntimeException $e) {
                 matrix_throw_homeserver_unreachable($e);
@@ -201,28 +182,15 @@ function matrix_add_instance(
         'group_id' => null,
     ]);
 
-    try {
-        if (!$room instanceof Plugin\Domain\Room) {
-            $room = $roomService->createRoomForCourse(
+    if (!$room instanceof Plugin\Domain\Room) {
+        try {
+            $roomService->createRoomForCourse(
                 $course,
                 $module,
             );
+        } catch (\RuntimeException $e) {
+            matrix_throw_homeserver_unreachable($e);
         }
-
-        $users = $moodleUserRepository->findAllUsersEnrolledInCourseAndGroupWithMatrixUserId(
-            $course->id(),
-            Moodle\Domain\GroupId::fromInt(0),
-        );
-
-        $matrixRoomService->synchronizeRoomMembers(
-            $room->matrixRoomId(),
-            Matrix\Domain\UserIdCollection::fromUserIds(...\array_map(static function (Plugin\Domain\User $user): Matrix\Domain\UserId {
-                return $user->matrixUserId();
-            }, $users)),
-            $userIdsOfStaff,
-        );
-    } catch (\RuntimeException $e) {
-        matrix_throw_homeserver_unreachable($e);
     }
 
     return $module->id()->toInt();

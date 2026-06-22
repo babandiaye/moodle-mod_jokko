@@ -68,6 +68,8 @@ $string = \array_merge($string, [
     Plugin\Infrastructure\Internationalization::ACTION_EDIT_MATRIX_USER_ID_WARNING_NO_MATRIX_USER_ID => 'It appears that you have not yet provided a valid Jokko user identifier. Without it, you cannot join any Jokko chat rooms. Can you provide one now?',
     Plugin\Infrastructure\Internationalization::ACTION_LIST_ROOMS_HEADER => 'Rooms',
     Plugin\Infrastructure\Internationalization::ACTION_LIST_ROOMS_WARNING_NO_ROOMS => 'There are no rooms to show.',
+    Plugin\Infrastructure\Internationalization::ACTION_LIST_ROOMS_GROUP_LABEL => 'Group',
+    Plugin\Infrastructure\Internationalization::ACTION_JOIN_ROOM_ERROR_NOT_ALLOWED => 'You are not allowed to join this room, or it no longer exists.',
     // Edit form
     Plugin\Infrastructure\Internationalization::FORM_EDIT_MATRIX_USER_ID_ERROR_MATRIX_USER_ID_INVALID => 'The Jokko user identifier you provided appears to be invalid.',
     Plugin\Infrastructure\Internationalization::FORM_EDIT_MATRIX_USER_ID_ERROR_MATRIX_USER_ID_REQUIRED => 'A Jokko user identifier is required, otherwise you cannot join Jokko chat rooms.',

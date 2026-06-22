@@ -35,6 +35,12 @@ final class Internationalization
      */
     public const ACTION_LIST_ROOMS_HEADER = 'action_list_rooms_header';
     public const ACTION_LIST_ROOMS_WARNING_NO_ROOMS = 'action_list_rooms_warning_no_rooms';
+    public const ACTION_LIST_ROOMS_GROUP_LABEL = 'action_list_rooms_group_label';
+
+    /**
+     * @see \mod_matrix\Plugin\Infrastructure\Action\JoinRoomAction
+     */
+    public const ACTION_JOIN_ROOM_ERROR_NOT_ALLOWED = 'action_join_room_error_not_allowed';
 
     /**
      * @see \mod_matrix\Plugin\Infrastructure\Form\EditMatrixUserIdForm

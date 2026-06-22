@@ -58,13 +58,10 @@ $PAGE->set_url('/mod/matrix/view.php', [
 ]);
 
 /** @var core_renderer $OUTPUT */
-echo $OUTPUT->header();
-
 if (!has_capability('mod/matrix:view', $PAGE->context)) {
-    /** @var core_renderer $OUTPUT */
     echo $OUTPUT->header();
 
-    echo $this->renderer->confirm(
+    echo $OUTPUT->confirm(
         \sprintf(
             '<p>%s</p>%s',
             get_string(
@@ -84,15 +81,25 @@ if (!has_capability('mod/matrix:view', $PAGE->context)) {
     exit;
 }
 
+/** @var string $action */
+$action = optional_param('action', '', PARAM_ALPHA);
+
+/** @var int $roomId */
+$roomId = optional_param('room', 0, PARAM_INT);
+
 $frontController = new Plugin\Infrastructure\FrontController(
     $container,
     $PAGE,
     $OUTPUT,
 );
 
+// L'en-tête de page est désormais imprimé par le FrontController (sauf pour
+// l'action « join » qui redirige directement, sans aucune sortie HTML).
 /** @var stdClass $USER */
 $frontController->handle(
     $module,
     $cm,
     $USER,
+    $action,
+    $roomId,
 );

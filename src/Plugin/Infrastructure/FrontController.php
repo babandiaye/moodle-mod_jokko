@@ -33,8 +33,25 @@ final class FrontController
     public function handle(
         Plugin\Domain\Module $module,
         \cm_info $cm,
-        \stdClass $user
+        \stdClass $user,
+        string $action = '',
+        int $roomId = 0
     ): void {
+        // Invitation paresseuse : déclenchée au clic sur « Entrer dans le salon ».
+        // L'action redirige (et termine) sans imprimer l'en-tête de page.
+        if ('join' === $action && $roomId > 0) {
+            $this->joinRoomAction()->handle(
+                $user,
+                $module,
+                $cm,
+                $roomId,
+            );
+
+            return;
+        }
+
+        echo $this->renderer->header();
+
         $matrixUserId = $this->container->matrixUserIdLoader()->load($user);
 
         if (!$matrixUserId instanceof Matrix\Domain\UserId) {
@@ -47,6 +64,16 @@ final class FrontController
             $user,
             $module,
             $cm,
+        );
+    }
+
+    private function joinRoomAction(): Plugin\Infrastructure\Action\JoinRoomAction
+    {
+        return new Plugin\Infrastructure\Action\JoinRoomAction(
+            $this->container->roomRepository(),
+            $this->container->matrixUserIdLoader(),
+            $this->container->roomService(),
+            $this->container->matrixRoomService(),
         );
     }
 
