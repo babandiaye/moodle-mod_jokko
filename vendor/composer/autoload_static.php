@@ -106,6 +106,7 @@ class ComposerStaticInit9c1492a2c6427a6443766866e1e60222
         'mod_matrix\\Plugin\\Domain\\UserId' => __DIR__ . '/../..' . '/src/Plugin/Domain/UserId.php',
         'mod_matrix\\Plugin\\Domain\\UserRepository' => __DIR__ . '/../..' . '/src/Plugin/Domain/UserRepository.php',
         'mod_matrix\\Plugin\\Infrastructure\\Action\\EditMatrixUserIdAction' => __DIR__ . '/../..' . '/src/Plugin/Infrastructure/Action/EditMatrixUserIdAction.php',
+        'mod_matrix\\Plugin\\Infrastructure\\Action\\JoinRoomAction' => __DIR__ . '/../..' . '/src/Plugin/Infrastructure/Action/JoinRoomAction.php',
         'mod_matrix\\Plugin\\Infrastructure\\Action\\ListRoomsAction' => __DIR__ . '/../..' . '/src/Plugin/Infrastructure/Action/ListRoomsAction.php',
         'mod_matrix\\Plugin\\Infrastructure\\DatabaseBasedModuleRepository' => __DIR__ . '/../..' . '/src/Plugin/Infrastructure/DatabaseBasedModuleRepository.php',
         'mod_matrix\\Plugin\\Infrastructure\\DatabaseBasedRoomRepository' => __DIR__ . '/../..' . '/src/Plugin/Infrastructure/DatabaseBasedRoomRepository.php',

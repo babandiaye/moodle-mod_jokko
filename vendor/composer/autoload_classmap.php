@@ -75,6 +75,7 @@ return array(
     'mod_matrix\\Plugin\\Domain\\UserId' => $baseDir . '/src/Plugin/Domain/UserId.php',
     'mod_matrix\\Plugin\\Domain\\UserRepository' => $baseDir . '/src/Plugin/Domain/UserRepository.php',
     'mod_matrix\\Plugin\\Infrastructure\\Action\\EditMatrixUserIdAction' => $baseDir . '/src/Plugin/Infrastructure/Action/EditMatrixUserIdAction.php',
+    'mod_matrix\\Plugin\\Infrastructure\\Action\\JoinRoomAction' => $baseDir . '/src/Plugin/Infrastructure/Action/JoinRoomAction.php',
     'mod_matrix\\Plugin\\Infrastructure\\Action\\ListRoomsAction' => $baseDir . '/src/Plugin/Infrastructure/Action/ListRoomsAction.php',
     'mod_matrix\\Plugin\\Infrastructure\\DatabaseBasedModuleRepository' => $baseDir . '/src/Plugin/Infrastructure/DatabaseBasedModuleRepository.php',
     'mod_matrix\\Plugin\\Infrastructure\\DatabaseBasedRoomRepository' => $baseDir . '/src/Plugin/Infrastructure/DatabaseBasedRoomRepository.php',
