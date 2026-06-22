@@ -11,6 +11,7 @@ Plugin d'activité Moodle qui intègre le protocole de messagerie Matrix (déplo
 - Synchronise automatiquement les membres des salons lors des inscriptions et modifications de groupes
 - Propose automatiquement un identifiant Matrix dérivé de l'adresse email de l'utilisateur
 - Deux cibles d'ouverture : `matrix.to` ou une instance Element Web configurée
+- Page **Salons** repensée : fiche détaillée façon BigBlueButton (statut, participants autorisés, accès, date de création, bouton « Entrer dans le salon »)
 - Disponible en **anglais** et en **français**
 
 ## Installation
@@ -65,6 +66,25 @@ Pour les autres méthodes, l'utilisateur doit saisir son identifiant manuellemen
 - **Accès invité** : `forbidden`
 - **Chiffrement de bout en bout** : **désactivé par défaut** pour éviter les problèmes de déchiffrement lors des invitations tardives et la friction liée à la validation des sessions. Le chiffrement pourra être réintroduit ultérieurement via une option dédiée.
 
+## Page Salons
+
+Lorsqu'un utilisateur ouvre une activité Jokko, la liste des salons accessibles s'affiche
+sous forme de **fiches détaillées** inspirées de l'interface BigBlueButton (rendu par
+[`src/Plugin/Infrastructure/Action/ListRoomsAction.php`](src/Plugin/Infrastructure/Action/ListRoomsAction.php)).
+
+Chaque fiche présente :
+
+- une **icône de discussion** et le **nom du salon** (cours, ou cours + groupe) ;
+- ✅ le **statut** (« Ce salon est prêt. Vous pouvez le rejoindre maintenant. ») ;
+- 👥 les **participants autorisés** (*Tous les participants* ou le nom du groupe) ;
+- 🔓 le **niveau d'accès** ;
+- 📅 la **date de création** du salon ;
+- un bouton principal **« Entrer dans le salon »** qui ouvre le salon dans un nouvel onglet.
+
+La mise en page est responsive : sur petit écran, la fiche passe en colonne et le bouton occupe
+toute la largeur. Les salons sont filtrés selon les groupes visibles par l'utilisateur (le
+personnel voit tous les salons).
+
 ## Différences par rapport au projet upstream
 
 Cette version apporte les changements suivants par rapport à [`matrix-org/moodle-mod_matrix`](https://github.com/matrix-org/moodle-mod_matrix) :
@@ -76,6 +96,7 @@ Cette version apporte les changements suivants par rapport à [`matrix-org/moodl
 | Génération auto | Extraction du `localpart` à partir de l'email (au lieu du username) + support multi-auth. |
 | Configuration | Le host du homeserver est dérivé de la configuration admin — plus de valeur codée en dur. |
 | Sécurité salons | Chiffrement E2E désactivé (avec `private_chat` conservé). |
+| Page Salons | Refonte de la liste des salons en fiches détaillées façon BigBlueButton (statut, participants, accès, date de création, bouton « Entrer dans le salon »). |
 | Correctifs | `return` manquant dans `ListRoomsAction`, type de paramètre de `groups_get_activity_allowed_groups`. |
 
 ## Pré-requis

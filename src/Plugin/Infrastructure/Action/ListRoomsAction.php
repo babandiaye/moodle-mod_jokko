@@ -77,7 +77,7 @@ final class ListRoomsAction
         $matrixUserId = $this->matrixUserIdLoader->load($user);
         $courseShortName = Moodle\Domain\CourseShortName::fromString($cm->get_course()->shortname);
 
-        $roomLinks = \array_map(function (Plugin\Domain\Room $room) use ($courseShortName, $module, $matrixUserId): Plugin\Domain\RoomLink {
+        $entries = \array_map(function (Plugin\Domain\Room $room) use ($courseShortName, $module, $matrixUserId): array {
             $url = $this->roomService->urlForRoom(
                 $room,
                 $matrixUserId,
@@ -86,56 +86,85 @@ final class ListRoomsAction
             $groupId = $room->groupId();
 
             if (!$groupId instanceof Moodle\Domain\GroupId) {
-                return Plugin\Domain\RoomLink::create(
-                    $url,
-                    $this->nameService->forCourseAndModule(
-                        $courseShortName,
-                        $module->name(),
-                    ),
+                $name = $this->nameService->forCourseAndModule(
+                    $courseShortName,
+                    $module->name(),
                 );
-            }
+                $audience = 'Tous les participants';
+            } else {
+                $group = $this->moodleGroupRepository->find($groupId);
 
-            $group = $this->moodleGroupRepository->find($groupId);
+                if (!$group instanceof Moodle\Domain\Group) {
+                    throw Moodle\Domain\GroupNotFound::for($groupId);
+                }
 
-            if (!$group instanceof Moodle\Domain\Group) {
-                throw Moodle\Domain\GroupNotFound::for($groupId);
-            }
-
-            return Plugin\Domain\RoomLink::create(
-                $url,
-                $this->nameService->forGroupCourseAndModule(
+                $name = $this->nameService->forGroupCourseAndModule(
                     $group->name(),
                     $courseShortName,
                     $module->name(),
-                ),
-            );
+                );
+                $audience = $group->name()->toString();
+            }
+
+            return [
+                'name' => $name->toString(),
+                'url' => $url->toString(),
+                'audience' => $audience,
+                'timecreated' => $room->timecreated()->toInt(),
+            ];
         }, $rooms);
 
-        \usort($roomLinks, static function (Plugin\Domain\RoomLink $a, Plugin\Domain\RoomLink $b): int {
-            return \strcmp(
-                $a->roomName()->toString(),
-                $b->roomName()->toString(),
-            );
+        \usort($entries, static function (array $a, array $b): int {
+            return \strcmp($a['name'], $b['name']);
         });
 
-        $cards = \implode(\PHP_EOL, \array_map(static function (Plugin\Domain\RoomLink $link): string {
-            $name = htmlspecialchars($link->roomName()->toString(), ENT_QUOTES, 'UTF-8');
-            $url = htmlspecialchars($link->url()->toString(), ENT_QUOTES, 'UTF-8');
+        $cards = \implode(\PHP_EOL, \array_map(static function (array $entry): string {
+            $name = htmlspecialchars($entry['name'], ENT_QUOTES, 'UTF-8');
+            $url = htmlspecialchars($entry['url'], ENT_QUOTES, 'UTF-8');
+            $audience = htmlspecialchars($entry['audience'], ENT_QUOTES, 'UTF-8');
+            $created = $entry['timecreated'] > 0
+                ? htmlspecialchars(userdate($entry['timecreated'], '%d %B %Y, %H:%M'), ENT_QUOTES, 'UTF-8')
+                : '';
+
+            $createdRow = '' === $created ? '' : <<<HTML
+            <li>
+                <svg class="jokko-meta-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2" ry="2"></rect><line x1="16" y1="2" x2="16" y2="6"></line><line x1="8" y1="2" x2="8" y2="6"></line><line x1="3" y1="10" x2="21" y2="10"></line></svg>
+                <span>Créé le {$created}</span>
+            </li>
+HTML;
 
             return <<<HTML
-<a href="{$url}" target="_blank" rel="noopener" class="jokko-room-card" title="{$name}">
+<div class="jokko-room-card">
     <div class="jokko-room-icon">
-        <svg xmlns="http://www.w3.org/2000/svg" width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-            <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-        </svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="34" height="34" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path><line x1="8.5" y1="11.5" x2="8.5" y2="11.5"></line><line x1="12" y1="11.5" x2="12" y2="11.5"></line><line x1="15.5" y1="11.5" x2="15.5" y2="11.5"></line></svg>
     </div>
     <div class="jokko-room-body">
-        <div class="jokko-room-name">{$name}</div>
-        <div class="jokko-room-cta">Rejoindre le salon &rarr;</div>
+        <div class="jokko-room-title">{$name}</div>
+        <ul class="jokko-room-meta">
+            <li class="jokko-meta-ok">
+                <svg class="jokko-meta-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path><polyline points="22 4 12 14.01 9 11.01"></polyline></svg>
+                <span>Ce salon est prêt. Vous pouvez le rejoindre maintenant.</span>
+            </li>
+            <li>
+                <svg class="jokko-meta-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>
+                <span>Participants autorisés : {$audience}</span>
+            </li>
+            <li>
+                <svg class="jokko-meta-icon" xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="11" width="18" height="11" rx="2" ry="2"></rect><path d="M7 11V7a5 5 0 0 1 9.9-1"></path></svg>
+                <span>Accès : Ouvert</span>
+            </li>
+{$createdRow}
+        </ul>
     </div>
-</a>
+    <div class="jokko-room-action">
+        <a href="{$url}" target="_blank" rel="noopener" class="jokko-room-btn" title="{$name}">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h4a2 2 0 0 1 2 2v14a2 2 0 0 1-2 2h-4"></path><polyline points="10 17 15 12 10 7"></polyline><line x1="15" y1="12" x2="3" y2="12"></line></svg>
+            <span>Entrer dans le salon</span>
+        </a>
+    </div>
+</div>
 HTML;
-        }, $roomLinks));
+        }, $entries));
 
         echo $this->renderer->heading(get_string(
             Plugin\Infrastructure\Internationalization::ACTION_LIST_ROOMS_HEADER,
@@ -144,36 +173,33 @@ HTML;
 
         echo <<<HTML
 <style>
-.jokko-rooms-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+.jokko-rooms-list {
+    display: flex;
+    flex-direction: column;
     gap: 1rem;
     margin: 1rem 0;
 }
 .jokko-room-card {
     display: flex;
     align-items: center;
-    gap: 1rem;
-    padding: 1rem 1.25rem;
-    background: linear-gradient(135deg, #1d3557 0%, #2a9d8f 100%);
-    border-radius: 12px;
-    color: #fff;
-    text-decoration: none;
-    box-shadow: 0 2px 6px rgba(0,0,0,0.08);
-    transition: transform 0.15s ease, box-shadow 0.15s ease;
+    gap: 1.5rem;
+    padding: 1.5rem 1.75rem;
+    background: #fff;
+    border: 1px solid #e5e7eb;
+    border-radius: 14px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    transition: box-shadow 0.15s ease, border-color 0.15s ease;
 }
-.jokko-room-card:hover,
-.jokko-room-card:focus {
-    transform: translateY(-2px);
-    box-shadow: 0 6px 18px rgba(0,0,0,0.15);
-    color: #fff;
-    text-decoration: none;
+.jokko-room-card:hover {
+    box-shadow: 0 6px 18px rgba(0,0,0,0.08);
+    border-color: #d1d5db;
 }
 .jokko-room-icon {
-    flex: 0 0 44px;
-    width: 44px;
-    height: 44px;
-    background: rgba(255,255,255,0.15);
+    flex: 0 0 72px;
+    width: 72px;
+    height: 72px;
+    background: #eef2ff;
+    color: #1d3557;
     border-radius: 50%;
     display: flex;
     align-items: center;
@@ -183,20 +209,79 @@ HTML;
     flex: 1;
     min-width: 0;
 }
-.jokko-room-name {
+.jokko-room-title {
+    font-weight: 700;
+    font-size: 1.4rem;
+    color: #111827;
+    margin-bottom: 0.75rem;
+}
+.jokko-room-meta {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+.jokko-room-meta li {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+    color: #374151;
+    font-size: 0.95rem;
+    padding: 0.18rem 0;
+}
+.jokko-meta-icon {
+    flex: 0 0 18px;
+    color: #6b7280;
+}
+.jokko-room-meta li.jokko-meta-ok .jokko-meta-icon {
+    color: #16a34a;
+}
+.jokko-room-action {
+    flex: 0 0 auto;
+    border-left: 1px solid #e5e7eb;
+    padding-left: 1.5rem;
+}
+.jokko-room-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.6rem;
+    padding: 0.75rem 1.5rem;
+    background: #1d3557;
+    color: #fff;
     font-weight: 600;
     font-size: 1rem;
-    white-space: nowrap;
-    overflow: hidden;
-    text-overflow: ellipsis;
+    border-radius: 10px;
+    text-decoration: none;
+    transition: background 0.15s ease, transform 0.15s ease;
 }
-.jokko-room-cta {
-    font-size: 0.85rem;
-    opacity: 0.85;
-    margin-top: 0.25rem;
+.jokko-room-btn:hover,
+.jokko-room-btn:focus {
+    background: #16263f;
+    color: #fff;
+    text-decoration: none;
+    transform: translateY(-1px);
+}
+@media (max-width: 720px) {
+    .jokko-room-card {
+        flex-direction: column;
+        align-items: stretch;
+        text-align: left;
+    }
+    .jokko-room-icon {
+        align-self: flex-start;
+    }
+    .jokko-room-action {
+        border-left: none;
+        border-top: 1px solid #e5e7eb;
+        padding-left: 0;
+        padding-top: 1rem;
+    }
+    .jokko-room-btn {
+        width: 100%;
+        justify-content: center;
+    }
 }
 </style>
-<div class="jokko-rooms-grid">
+<div class="jokko-rooms-list">
     {$cards}
 </div>
 HTML;
