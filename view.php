@@ -87,19 +87,43 @@ $action = optional_param('action', '', PARAM_ALPHA);
 /** @var int $roomId */
 $roomId = optional_param('room', 0, PARAM_INT);
 
+// Invitation paresseuse : l'action « join » redirige avant toute sortie HTML.
+// On la traite ici, sans imprimer l'en-tête (sinon $OUTPUT bascule en
+// core_renderer et la redirection afficherait une page intermédiaire).
+if ('join' === $action && $roomId > 0) {
+    $joinRoomAction = new Plugin\Infrastructure\Action\JoinRoomAction(
+        $container->roomRepository(),
+        $container->matrixUserIdLoader(),
+        $container->roomService(),
+        $container->matrixRoomService(),
+    );
+
+    /** @var stdClass $USER */
+    $joinRoomAction->handle(
+        $USER,
+        $module,
+        $cm,
+        $roomId,
+    );
+
+    // handle() appelle redirect(), qui termine l'exécution du script.
+}
+
+// Pour l'affichage normal (liste des salons / formulaire d'identifiant) :
+// imprimer l'en-tête transforme $OUTPUT en core_renderer attendu par le
+// FrontController.
+/** @var core_renderer $OUTPUT */
+echo $OUTPUT->header();
+
 $frontController = new Plugin\Infrastructure\FrontController(
     $container,
     $PAGE,
     $OUTPUT,
 );
 
-// L'en-tête de page est désormais imprimé par le FrontController (sauf pour
-// l'action « join » qui redirige directement, sans aucune sortie HTML).
 /** @var stdClass $USER */
 $frontController->handle(
     $module,
     $cm,
     $USER,
-    $action,
-    $roomId,
 );
