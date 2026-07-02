@@ -71,3 +71,9 @@ filestore/
 # --- OS ---
 .DS_Store
 desktop.ini
+
+# Secrets / variables d'environnement (garder env.example)
+.env
+.env.*
+env.*
+!env.example
