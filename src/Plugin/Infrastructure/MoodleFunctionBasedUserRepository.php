@@ -28,7 +28,12 @@ final class MoodleFunctionBasedUserRepository implements Plugin\Domain\UserRepos
     {
         $context = context_course::instance($courseId->toInt());
 
-        $users = get_users_by_capability(
+        // get_users_by_capability() retourne TOUT utilisateur possédant la
+        // capacité mod/matrix:staff, y compris via un rôle attribué au niveau
+        // système (administrateurs de plateforme, rôle "Manager" global) —
+        // sans jamais vérifier qu'il est inscrit à CE cours. get_enrolled_users()
+        // croise inscription + capacité, comme pour les étudiants ci-dessous.
+        $users = get_enrolled_users(
             $context,
             'mod/matrix:staff',
         );
