@@ -90,4 +90,6 @@ final class Internationalization
     public const SETTINGS_HOMESERVER_HEADING = 'settings_homeserver_heading';
     public const SETTINGS_HOMESERVER_URL_DESCRIPTION = 'settings_homeserver_url_description';
     public const SETTINGS_HOMESERVER_URL_NAME = 'settings_homeserver_url_name';
+    public const SETTINGS_ROOM_AVATAR_MXC_DESCRIPTION = 'settings_room_avatar_mxc_description';
+    public const SETTINGS_ROOM_AVATAR_MXC_NAME = 'settings_room_avatar_mxc_name';
 }

@@ -24,7 +24,8 @@ final class RoomService
     public function createRoom(
         Matrix\Domain\RoomName $name,
         Matrix\Domain\RoomTopic $topic,
-        array $creationContent
+        array $creationContent,
+        ?Matrix\Domain\Url $avatarMxc = null
     ): Matrix\Domain\RoomId {
         $whoami = $this->api->whoAmI();
 
@@ -32,35 +33,52 @@ final class RoomService
         $staffPowerLevel = Matrix\Domain\PowerLevel::staff();
         $redactorPowerLevel = Matrix\Domain\PowerLevel::redactor();
 
+        $initialState = [
+            // https://spec.matrix.org/latest/client-server-api/#mroomencryption
+            // Chiffrement E2E activé via algorithme Megolm (recommandé Matrix).
+            [
+                'content' => [
+                    'algorithm' => 'm.megolm.v1.aes-sha2',
+                ],
+                'state_key' => '',
+                'type' => 'm.room.encryption',
+            ],
+            // https://spec.matrix.org/latest/client-server-api/#mroomguest_access
+            [
+                'content' => [
+                    'guest_access' => 'forbidden',
+                ],
+                'state_key' => '',
+                'type' => 'm.room.guest_access',
+            ],
+            // https://spec.matrix.org/latest/client-server-api/#mroomhistory_visibility
+            [
+                'content' => [
+                    'history_visibility' => 'shared',
+                ],
+                'state_key' => '',
+                'type' => 'm.room.history_visibility',
+            ],
+        ];
+
+        // https://spec.matrix.org/latest/client-server-api/#mroomavatar
+        // Un salon avec avatar (et un membre du staff invité dès la création,
+        // voir Plugin\Application\RoomService) évite de rester dans l'état à
+        // 2 membres qui fait classer certains clients (dont Element) le salon
+        // comme une discussion privée plutôt qu'un salon de groupe.
+        if ($avatarMxc instanceof Matrix\Domain\Url && '' !== $avatarMxc->toString()) {
+            $initialState[] = [
+                'content' => [
+                    'url' => $avatarMxc->toString(),
+                ],
+                'state_key' => '',
+                'type' => 'm.room.avatar',
+            ];
+        }
+
         return $this->api->createRoom([
             'creation_content' => $creationContent,
-            'initial_state' => [
-                // https://spec.matrix.org/latest/client-server-api/#mroomencryption
-                // Chiffrement E2E activé via algorithme Megolm (recommandé Matrix).
-                [
-                    'content' => [
-                        'algorithm' => 'm.megolm.v1.aes-sha2',
-                    ],
-                    'state_key' => '',
-                    'type' => 'm.room.encryption',
-                ],
-                // https://spec.matrix.org/latest/client-server-api/#mroomguest_access
-                [
-                    'content' => [
-                        'guest_access' => 'forbidden',
-                    ],
-                    'state_key' => '',
-                    'type' => 'm.room.guest_access',
-                ],
-                // https://spec.matrix.org/latest/client-server-api/#mroomhistory_visibility
-                [
-                    'content' => [
-                        'history_visibility' => 'shared',
-                    ],
-                    'state_key' => '',
-                    'type' => 'm.room.history_visibility',
-                ],
-            ],
+            'initial_state' => $initialState,
             'name' => $name->toString(),
             'power_level_content_override' => [
                 'ban' => $botPowerLevel->toInt(),

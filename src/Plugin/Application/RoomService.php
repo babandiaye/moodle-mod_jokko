@@ -21,6 +21,7 @@ final class RoomService
     private $nameService;
     private $moduleRepository;
     private $roomRepository;
+    private $userRepository;
     private $matrixRoomService;
     private $clock;
 
@@ -29,6 +30,7 @@ final class RoomService
         Plugin\Application\NameService $nameService,
         Plugin\Domain\ModuleRepository $moduleRepository,
         Plugin\Domain\RoomRepository $roomRepository,
+        Plugin\Domain\UserRepository $userRepository,
         Matrix\Application\RoomService $matrixRoomService,
         Clock\Clock $clock
     ) {
@@ -36,6 +38,7 @@ final class RoomService
         $this->nameService = $nameService;
         $this->moduleRepository = $moduleRepository;
         $this->roomRepository = $roomRepository;
+        $this->userRepository = $userRepository;
         $this->matrixRoomService = $matrixRoomService;
         $this->clock = $clock;
     }
@@ -100,6 +103,7 @@ final class RoomService
             [
                 'org.matrix.moodle.course_id' => $course->id()->toInt(),
             ],
+            $this->configuration->roomAvatarMxc(),
         );
 
         $room = Plugin\Domain\Room::create(
@@ -112,6 +116,11 @@ final class RoomService
         );
 
         $this->roomRepository->save($room);
+
+        $this->inviteStaff(
+            $course->id(),
+            $matrixRoomId,
+        );
 
         return $room;
     }
@@ -136,6 +145,7 @@ final class RoomService
                 'org.matrix.moodle.course_id' => $course->id()->toInt(),
                 'org.matrix.moodle.group_id' => $group->id()->toInt(),
             ],
+            $this->configuration->roomAvatarMxc(),
         );
 
         $room = Plugin\Domain\Room::create(
@@ -149,7 +159,34 @@ final class RoomService
 
         $this->roomRepository->save($room);
 
+        $this->inviteStaff(
+            $course->id(),
+            $matrixRoomId,
+        );
+
         return $room;
+    }
+
+    /**
+     * Invite immédiatement le personnel du cours (capacité mod/matrix:staff)
+     * dans le salon qui vient d'être créé, pour ne jamais laisser le salon
+     * dans l'état à 2 membres (bot + premier étudiant) qui fait classer
+     * certains clients Matrix (dont Element) le salon comme une discussion
+     * privée plutôt qu'un salon de groupe.
+     */
+    private function inviteStaff(
+        Moodle\Domain\CourseId $courseId,
+        Matrix\Domain\RoomId $matrixRoomId
+    ): void {
+        $staffUsers = $this->userRepository->findAllStaffInCourseWithMatrixUserId($courseId);
+
+        foreach ($staffUsers as $staffUser) {
+            $this->matrixRoomService->inviteUserToRoom(
+                $matrixRoomId,
+                $staffUser->matrixUserId(),
+                true,
+            );
+        }
     }
 
     private static function isDifferentHomeserver(

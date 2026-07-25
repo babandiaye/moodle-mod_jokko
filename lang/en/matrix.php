@@ -57,6 +57,8 @@ $string = \array_merge($string, [
     Plugin\Infrastructure\Internationalization::SETTINGS_HOMESERVER_HEADING => 'Homeserver settings',
     Plugin\Infrastructure\Internationalization::SETTINGS_HOMESERVER_URL_DESCRIPTION => 'The URL where the Jokko bot should connect to your homeserver',
     Plugin\Infrastructure\Internationalization::SETTINGS_HOMESERVER_URL_NAME => 'Homeserver URL',
+    Plugin\Infrastructure\Internationalization::SETTINGS_ROOM_AVATAR_MXC_DESCRIPTION => 'Optional. An mxc:// URI (already uploaded to your homeserver\'s media repository) used as the avatar for every Jokko room created from now on. Leave empty for no avatar. Does not affect rooms already created.',
+    Plugin\Infrastructure\Internationalization::SETTINGS_ROOM_AVATAR_MXC_NAME => 'Room avatar (mxc:// URI)',
     // Error handling (lib.php)
     Plugin\Infrastructure\Internationalization::ERROR_HOMESERVER_UNREACHABLE => 'Unable to reach the Jokko homeserver',
     Plugin\Infrastructure\Internationalization::ERROR_HOMESERVER_UNREACHABLE_HELP => 'The activity could not be created or updated because the Jokko homeserver is not reachable. Please contact your administrator to verify the homeserver URL, the access token and the network connectivity.',

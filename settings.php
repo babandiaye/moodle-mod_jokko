@@ -76,4 +76,18 @@ if ($ADMIN->fulltree) {
         $defaultConfiguration->elementUrl()->toString(),
         PARAM_TEXT,
     ));
+
+    $settings->add(new admin_setting_configtext(
+        'mod_matrix/room_avatar_mxc',
+        get_string(
+            Plugin\Infrastructure\Internationalization::SETTINGS_ROOM_AVATAR_MXC_NAME,
+            Plugin\Application\Plugin::NAME,
+        ),
+        get_string(
+            Plugin\Infrastructure\Internationalization::SETTINGS_ROOM_AVATAR_MXC_DESCRIPTION,
+            Plugin\Application\Plugin::NAME,
+        ),
+        $defaultConfiguration->roomAvatarMxc()->toString(),
+        PARAM_TEXT,
+    ));
 }

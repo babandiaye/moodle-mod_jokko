@@ -53,6 +53,8 @@ $string = \array_merge($string, [
     Plugin\Infrastructure\Internationalization::SETTINGS_HOMESERVER_HEADING => 'Paramètres du homeserver',
     Plugin\Infrastructure\Internationalization::SETTINGS_HOMESERVER_URL_DESCRIPTION => 'L’URL à laquelle le bot Jokko doit se connecter à votre homeserver',
     Plugin\Infrastructure\Internationalization::SETTINGS_HOMESERVER_URL_NAME => 'URL du homeserver',
+    Plugin\Infrastructure\Internationalization::SETTINGS_ROOM_AVATAR_MXC_DESCRIPTION => 'Optionnel. Une URI mxc:// (déjà téléversée dans le dépôt de médias de votre homeserver) utilisée comme avatar pour chaque nouveau salon Jokko créé à partir de maintenant. Laisser vide pour ne pas définir d’avatar. Sans effet sur les salons déjà créés.',
+    Plugin\Infrastructure\Internationalization::SETTINGS_ROOM_AVATAR_MXC_NAME => 'Avatar des salons (URI mxc://)',
     // Gestion des erreurs (lib.php)
     Plugin\Infrastructure\Internationalization::ERROR_HOMESERVER_UNREACHABLE => 'Impossible de joindre le homeserver Jokko',
     Plugin\Infrastructure\Internationalization::ERROR_HOMESERVER_UNREACHABLE_HELP => 'L’activité n’a pas pu être créée ou mise à jour car le homeserver Jokko n’est pas joignable. Contactez votre administrateur pour vérifier l’URL du homeserver, le jeton d’accès et la connectivité réseau.',

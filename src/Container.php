@@ -73,6 +73,7 @@ final class Container
                 $container->nameService(),
                 $container->moduleRepository(),
                 $container->roomRepository(),
+                $container->userRepository(),
                 $container->matrixRoomService(),
                 $container->clock(),
             );

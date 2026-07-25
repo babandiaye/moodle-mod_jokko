@@ -17,15 +17,18 @@ final class Configuration
     private $accessToken;
     private $elementUrl;
     private $homeserverUrl;
+    private $roomAvatarMxc;
 
     private function __construct(
         Matrix\Domain\AccessToken $accessToken,
         Matrix\Domain\Url $elementUrl,
-        Matrix\Domain\Url $homeserverUrl
+        Matrix\Domain\Url $homeserverUrl,
+        Matrix\Domain\Url $roomAvatarMxc
     ) {
         $this->accessToken = $accessToken;
         $this->elementUrl = $elementUrl;
         $this->homeserverUrl = $homeserverUrl;
+        $this->roomAvatarMxc = $roomAvatarMxc;
     }
 
     public static function default(): self
@@ -33,6 +36,7 @@ final class Configuration
         return new self(
             Matrix\Domain\AccessToken::fromString(''),
             Matrix\Domain\Url::fromString('https://matrix-client.matrix.org'),
+            Matrix\Domain\Url::fromString(''),
             Matrix\Domain\Url::fromString(''),
         );
     }
@@ -93,10 +97,19 @@ final class Configuration
             ));
         }
 
+        // Réglage optionnel ajouté après la mise en service initiale du plugin :
+        // contrairement aux trois réglages ci-dessus, on ne peut pas exiger sa
+        // présence dans la config existante (elle ne sera écrite qu'une fois
+        // qu'un administrateur aura ouvert et enregistré la page de réglages).
+        $roomAvatarMxc = \property_exists($object, 'room_avatar_mxc') && \is_string($object->room_avatar_mxc)
+            ? \trim($object->room_avatar_mxc)
+            : '';
+
         return new self(
             Matrix\Domain\AccessToken::fromString(\trim($accessToken)),
             Matrix\Domain\Url::fromString(\trim($elementUrl)),
             Matrix\Domain\Url::fromString(\trim($homeserverUrl)),
+            Matrix\Domain\Url::fromString($roomAvatarMxc),
         );
     }
 
@@ -113,5 +126,10 @@ final class Configuration
     public function homeserverUrl(): Matrix\Domain\Url
     {
         return $this->homeserverUrl;
+    }
+
+    public function roomAvatarMxc(): Matrix\Domain\Url
+    {
+        return $this->roomAvatarMxc;
     }
 }
