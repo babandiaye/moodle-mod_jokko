@@ -57,7 +57,7 @@ final class backup_matrix_activity_structure_step extends backup_activity_struct
                 'group_id',
                 'room_id',
                 'timecreated',
-                'timeupdated',
+                'timemodified',
             ],
         );
 

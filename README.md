@@ -64,7 +64,8 @@ Pour les autres méthodes, l'utilisateur doit saisir son identifiant manuellemen
 - **Visibilité** : `private_chat` — accès uniquement sur invitation du bot
 - **Historique** : `shared` — lisible par tous les membres à partir du moment où ils rejoignent
 - **Accès invité** : `forbidden`
-- **Chiffrement de bout en bout** : **désactivé par défaut** pour éviter les problèmes de déchiffrement lors des invitations tardives et la friction liée à la validation des sessions. Le chiffrement pourra être réintroduit ultérieurement via une option dédiée.
+- **Chiffrement de bout en bout** : **activé** (algorithme Megolm `m.megolm.v1.aes-sha2`), défini une fois pour toutes à la création du salon — l'événement `m.room.create` est immuable côté protocole Matrix, ce réglage ne peut donc pas être changé après coup pour un salon existant.
+  ⚠️ **Point de vigilance** : combiné à l'**invitation paresseuse** (un utilisateur n'est invité qu'au moment où il clique sur « Entrer dans le salon », donc potentiellement bien après les premiers messages), un nouvel arrivant ne peut déchiffrer l'historique que si son client récupère les clés de session Megolm auprès d'un appareil déjà présent dans le salon. Ce partage de clés d'historique repose sur [MSC3061](https://github.com/matrix-org/matrix-spec-proposals/blob/main/proposals/3061-sharing-keys-for-past-messages.md) (activé par `history_visibility: shared`, déjà en place ici) et suppose un client Element à jour ainsi qu'au moins un appareil en ligne détenteur des clés, ou une sauvegarde de clés côté serveur configurée. À défaut, les messages antérieurs à l'arrivée d'un membre resteront marqués « impossible à déchiffrer ». Ce comportement doit être vérifié en conditions réelles (client Element utilisé, config Synapse) plutôt que supposé acquis.
 
 ## Page Salons
 
@@ -95,7 +96,7 @@ Cette version apporte les changements suivants par rapport à [`matrix-org/moodl
 | Langues | Ajout de la traduction française complète ([`lang/fr/matrix.php`](lang/fr/matrix.php)). |
 | Génération auto | Extraction du `localpart` à partir de l'email (au lieu du username) + support multi-auth. |
 | Configuration | Le host du homeserver est dérivé de la configuration admin — plus de valeur codée en dur. |
-| Sécurité salons | Chiffrement E2E désactivé (avec `private_chat` conservé). |
+| Sécurité salons | Chiffrement E2E actif par défaut (Megolm, avec `private_chat` conservé) — voir la remarque sur son interaction avec l'invitation paresseuse dans « Propriétés des salons créés ». |
 | Page Salons | Refonte de la liste des salons en fiches détaillées façon BigBlueButton (statut, participants, accès, date de création, bouton « Entrer dans le salon »). |
 | Correctifs | `return` manquant dans `ListRoomsAction`, type de paramètre de `groups_get_activity_allowed_groups`. |
 
