@@ -120,9 +120,26 @@ final class RoomService
         ]);
     }
 
+    /**
+     * Idempotent : si le salon a déjà été supprimé/purgé côté Matrix (par
+     * exemple directement via la console d'administration Synapse), l'API
+     * répond par une erreur structurée (M_NOT_FOUND ou M_FORBIDDEN — Synapse
+     * ne distingue pas de façon fiable « le salon n'a jamais existé » de
+     * « le bot n'y est plus »). On considère alors qu'il n'y a plus rien à
+     * nettoyer côté Matrix et on revient sans erreur, plutôt que de faire
+     * échouer tout l'appelant (ex. la suppression du cours Moodle).
+     */
     public function removeRoom(Matrix\Domain\RoomId $roomId): void
     {
-        $userIdsOfUsersInRoom = $this->api->listUsers($roomId);
+        try {
+            $userIdsOfUsersInRoom = $this->api->listUsers($roomId);
+        } catch (Matrix\Domain\ApiError $exception) {
+            if (self::isRoomAlreadyGone($exception)) {
+                return;
+            }
+
+            throw $exception;
+        }
 
         $userIdOfBot = $this->api->whoAmI();
 
@@ -140,6 +157,18 @@ final class RoomService
         $this->api->kickUser(
             $roomId,
             $userIdOfBot,
+        );
+    }
+
+    private static function isRoomAlreadyGone(Matrix\Domain\ApiError $exception): bool
+    {
+        return \in_array(
+            $exception->errorCode(),
+            [
+                'M_NOT_FOUND',
+                'M_FORBIDDEN',
+            ],
+            true,
         );
     }
 
