@@ -22,6 +22,7 @@ return array(
     'mod_matrix\\Matrix\\Application\\Api' => $baseDir . '/src/Matrix/Application/Api.php',
     'mod_matrix\\Matrix\\Application\\RoomService' => $baseDir . '/src/Matrix/Application/RoomService.php',
     'mod_matrix\\Matrix\\Domain\\AccessToken' => $baseDir . '/src/Matrix/Domain/AccessToken.php',
+    'mod_matrix\\Matrix\\Domain\\ApiError' => $baseDir . '/src/Matrix/Domain/ApiError.php',
     'mod_matrix\\Matrix\\Domain\\EventType' => $baseDir . '/src/Matrix/Domain/EventType.php',
     'mod_matrix\\Matrix\\Domain\\Homeserver' => $baseDir . '/src/Matrix/Domain/Homeserver.php',
     'mod_matrix\\Matrix\\Domain\\Membership' => $baseDir . '/src/Matrix/Domain/Membership.php',

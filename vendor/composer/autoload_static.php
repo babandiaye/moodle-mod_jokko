@@ -53,6 +53,7 @@ class ComposerStaticInit9c1492a2c6427a6443766866e1e60222
         'mod_matrix\\Matrix\\Application\\Api' => __DIR__ . '/../..' . '/src/Matrix/Application/Api.php',
         'mod_matrix\\Matrix\\Application\\RoomService' => __DIR__ . '/../..' . '/src/Matrix/Application/RoomService.php',
         'mod_matrix\\Matrix\\Domain\\AccessToken' => __DIR__ . '/../..' . '/src/Matrix/Domain/AccessToken.php',
+        'mod_matrix\\Matrix\\Domain\\ApiError' => __DIR__ . '/../..' . '/src/Matrix/Domain/ApiError.php',
         'mod_matrix\\Matrix\\Domain\\EventType' => __DIR__ . '/../..' . '/src/Matrix/Domain/EventType.php',
         'mod_matrix\\Matrix\\Domain\\Homeserver' => __DIR__ . '/../..' . '/src/Matrix/Domain/Homeserver.php',
         'mod_matrix\\Matrix\\Domain\\Membership' => __DIR__ . '/../..' . '/src/Matrix/Domain/Membership.php',
