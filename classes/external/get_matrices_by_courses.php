@@ -134,6 +134,11 @@ final class get_matrices_by_courses extends \external_api
 
             $matrices[] = [
                 'id' => (int) $record->id,
+                // Clé prête à l'emploi combinant wwwroot + id d'activité :
+                // évite qu'un consommateur agrégeant plusieurs plateformes
+                // n'oublie de combiner lui-même wwwroot et id, et retombe
+                // par erreur dans une collision entre plateformes.
+                'activity_uid' => \hash('sha256', $CFG->wwwroot . '#' . $record->id),
                 'coursemodule' => (int) $cm->id,
                 'course' => (int) $record->course,
                 'course_shortname' => $course->shortname ?? '',
@@ -167,6 +172,12 @@ final class get_matrices_by_courses extends \external_api
             'matrices' => new \external_multiple_structure(
                 new \external_single_structure([
                     'id' => new \external_value(\PARAM_INT, 'Matrix activity id'),
+                    'activity_uid' => new \external_value(
+                        \PARAM_ALPHANUM,
+                        'SHA-256 hex digest of wwwroot + activity id. Ready-to-use collision-free key when ' .
+                        'aggregating activities from several Moodle platforms, without having to manually ' .
+                        'combine wwwroot and id yourself.',
+                    ),
                     'coursemodule' => new \external_value(\PARAM_INT, 'Course module id'),
                     'course' => new \external_value(\PARAM_INT, 'Course id'),
                     'course_shortname' => new \external_value(\PARAM_TEXT, 'Course short name'),
