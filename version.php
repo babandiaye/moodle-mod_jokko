@@ -19,4 +19,4 @@ $plugin->dependencies = [];
 $plugin->maturity = MATURITY_BETA;
 $plugin->release = '1.3-beta';
 $plugin->requires = 2020061505; // Requires Moodle v3.9 (LTS)
-$plugin->version = 2026072501; // UNCHK Jokko: n'invite plus le staff non inscrit au cours (get_enrolled_users)
+$plugin->version = 2026072502; // UNCHK Jokko: ajout du wwwroot dans le webservice mod_matrix_get_matrices_by_courses

@@ -40,7 +40,7 @@ final class get_matrices_by_courses extends \external_api
 
     public static function execute(array $courseids = []): array
     {
-        global $DB, $USER;
+        global $CFG, $DB, $USER;
 
         $params = self::validate_parameters(
             self::execute_parameters(),
@@ -60,6 +60,7 @@ final class get_matrices_by_courses extends \external_api
             return [
                 'matrices' => [],
                 'warnings' => [],
+                'wwwroot' => (string) $CFG->wwwroot,
             ];
         }
 
@@ -74,6 +75,7 @@ final class get_matrices_by_courses extends \external_api
             return [
                 'matrices' => [],
                 'warnings' => $warnings,
+                'wwwroot' => (string) $CFG->wwwroot,
             ];
         }
 
@@ -155,6 +157,7 @@ final class get_matrices_by_courses extends \external_api
         return [
             'matrices' => $matrices,
             'warnings' => $warnings,
+            'wwwroot' => (string) $CFG->wwwroot,
         ];
     }
 
@@ -186,6 +189,12 @@ final class get_matrices_by_courses extends \external_api
                 'List of Jokko (Matrix) activities accessible to the user',
             ),
             'warnings' => new \external_warnings(),
+            'wwwroot' => new \external_value(
+                \PARAM_URL,
+                'The wwwroot of this Moodle site. Lets a caller disambiguate courses/activities when ' .
+                'aggregating results from several Moodle platforms sharing the same Jokko homeserver, ' .
+                'since "course" and "id" are only unique within a single platform.',
+            ),
         ]);
     }
 }
